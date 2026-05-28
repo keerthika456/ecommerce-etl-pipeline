@@ -1,23 +1,27 @@
 # dashboard.py
 import streamlit as st
 import pandas as pd
-from sqlalchemy import create_engine
-from config import CONNECTION_STRING
 
 # ─── Page Config ──────────────────────────────────────
 st.set_page_config(
-    page_title = "E-Commerce ETL Dashboard",
-    page_icon  = "🛒",
-    layout     = "wide"
+    page_title="E-Commerce ETL Dashboard",
+    page_icon="🛒",
+    layout="wide"
 )
 
-# ─── Load Data from MySQL ──────────────────────────────
+# ─── Load Data from CSV ───────────────────────────────
 @st.cache_data
 def load_data():
-    engine = create_engine(CONNECTION_STRING)
-    orders  = pd.read_sql("SELECT * FROM orders", engine)
-    summary = pd.read_sql("SELECT * FROM country_summary", engine)
-    cancellations = pd.read_sql("SELECT * FROM cancellations", engine)
+    orders = pd.read_csv("data/clean_data.csv")
+    orders['InvoiceDate'] = pd.to_datetime(orders['InvoiceDate'])
+    cancellations = orders[orders['Is_Cancelled'] == True]
+    summary = orders[orders['Is_Cancelled'] == False].groupby('Country').agg(
+        Total_Orders     = ('InvoiceNo',  'nunique'),
+        Total_Revenue    = ('TotalPrice', 'sum'),
+        Total_Quantity   = ('Quantity',   'sum'),
+        Unique_Customers = ('CustomerID', 'nunique')
+    ).reset_index()
+    summary['Total_Revenue'] = summary['Total_Revenue'].round(2)
     return orders, summary, cancellations
 
 orders, summary, cancellations = load_data()
@@ -29,37 +33,32 @@ st.divider()
 
 # ─── KPI Cards ────────────────────────────────────────
 st.subheader("Key Metrics")
-
 col1, col2, col3, col4 = st.columns(4)
 
-normal_orders = orders[orders['Is_Cancelled'] == 0]
-total_revenue    = normal_orders['TotalPrice'].sum()
-total_orders     = normal_orders['InvoiceNo'].nunique()
-total_customers  = normal_orders['CustomerID'].nunique()
+normal_orders = orders[orders['Is_Cancelled'] == False]
+total_revenue     = normal_orders['TotalPrice'].sum()
+total_orders      = normal_orders['InvoiceNo'].nunique()
+total_customers   = normal_orders['CustomerID'].nunique()
 cancellation_rate = len(cancellations) / len(orders) * 100
 
-col1.metric("Total Revenue",    f"£{total_revenue:,.2f}")
-col2.metric("Total Orders",     f"{total_orders:,}")
-col3.metric("Total Customers",  f"{total_customers:,}")
-col4.metric("Cancellation Rate",f"{cancellation_rate:.1f}%")
+col1.metric("Total Revenue",     f"£{total_revenue:,.2f}")
+col2.metric("Total Orders",      f"{total_orders:,}")
+col3.metric("Total Customers",   f"{total_customers:,}")
+col4.metric("Cancellation Rate", f"{cancellation_rate:.1f}%")
 
 st.divider()
 
 # ─── Monthly Revenue Chart ────────────────────────────
 st.subheader("Monthly Revenue Trend")
-
 monthly = normal_orders.groupby(['Year', 'Month'])['TotalPrice'].sum().reset_index()
 monthly['Date'] = pd.to_datetime(monthly[['Year', 'Month']].assign(Day=1))
 monthly = monthly.sort_values('Date')
-monthly.columns = ['Year', 'Month', 'Revenue', 'Date']
-
-st.line_chart(monthly.set_index('Date')['Revenue'])
+st.line_chart(monthly.set_index('Date')['TotalPrice'])
 
 st.divider()
 
 # ─── Top 10 Countries ─────────────────────────────────
 st.subheader("Top 10 Countries by Revenue")
-
 top10 = summary.nlargest(10, 'Total_Revenue')[['Country', 'Total_Revenue']]
 st.bar_chart(top10.set_index('Country'))
 
