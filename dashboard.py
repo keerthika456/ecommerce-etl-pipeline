@@ -17,6 +17,7 @@ def load_data():
     filepath = os.path.join(base_path, "data", "clean_data.csv")
     orders = pd.read_csv(filepath, low_memory=False)
     orders['InvoiceDate'] = pd.to_datetime(orders['InvoiceDate'])
+    orders['Is_Cancelled'] = orders['Is_Cancelled'].astype(str) == 'True'
     cancellations = orders[orders['Is_Cancelled'] == True]
     summary = orders[orders['Is_Cancelled'] == False].groupby('Country').agg(
         Total_Orders     = ('InvoiceNo',  'nunique'),
