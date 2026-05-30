@@ -1,6 +1,7 @@
 # dashboard.py
 import streamlit as st
 import pandas as pd
+import os
 
 # ─── Page Config ──────────────────────────────────────
 st.set_page_config(
@@ -12,7 +13,6 @@ st.set_page_config(
 # ─── Load Data from CSV ───────────────────────────────
 @st.cache_data
 def load_data():
-    import os
     base_path = os.path.dirname(__file__)
     filepath = os.path.join(base_path, "data", "clean_data.csv")
     orders = pd.read_csv(filepath, low_memory=False)
@@ -27,6 +27,8 @@ def load_data():
     ).reset_index()
     summary['Total_Revenue'] = summary['Total_Revenue'].round(2)
     return orders, summary, cancellations
+
+orders, summary, cancellations = load_data()
 
 # ─── Title ────────────────────────────────────────────
 st.title("🛒 E-Commerce Sales Dashboard")
