@@ -4,6 +4,12 @@
 End-to-end ETL pipeline built with Python and MySQL
 that processes 541,909 UK e-commerce transactions.
 
+## Live Dashboard
+👉https://ecommerce-etl-pipeline-mhs3jmfezgykwmgw5nxm4o.streamlit.app/
+
+## GitHub
+👉 https://github.com/keerthika456/ecommerce-etl-pipeline
+
 ## Tech Stack
 - Python 3.14
 - Pandas
@@ -25,7 +31,7 @@ etl_project/
 ## Pipeline Steps
 1. Extract   → Loads 541,909 rows from CSV
 2. Transform → Cleans data, fixes types, flags cancellations
-3. Load      → Creates 3 tables in MySQL
+3. Load      → Creats 3 tables in MySQL
 
 ## Tables Created
 | Table | Rows | Description |
